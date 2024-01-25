@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+#
+# Technology Management Gateway (TMG) CLI script.
+
+set -euo pipefail
+
+# Constants
+readonly SELF_IDENTITY="tmg"
+readonly SELF_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SELF_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly COMMANDS_PATH="${SELF_PATH}/commands"
+
+# Import common functions
+source "${SELF_PATH}/includes/common.sh"
+
+# Environment settings
+export TMG_VERBOSE=$([[ "${TMG_ENV:-}" == "dev" ]] && echo "true" || echo "false")
+
+# General description of the CLI tool
+general_description() {
+    echo "Companion CLI for managing various IT operations."
+}
+
+# Function to display usage help
+usage() {
+    local error_msg=${1:-}
+
+    [[ -n $error_msg ]] && echo -e "\n$(echo_red "${error_msg}")"
+
+    echo
+    general_description
+    echo -e "\nUsage: ./${SELF_NAME} COMMAND [OPTIONS]\n"
+    echo "Available COMMANDS:"
+    for cmd_script in "${COMMANDS_PATH}"/*.sh; do
+        if [[ -f "${cmd_script}" ]]; then
+            local cmd=$(basename "${cmd_script}" .sh)
+
+            # Source the script
+            source "${cmd_script}"
+
+            # Check if command_description function exists
+            if declare -f "command_description" >/dev/null 2>&1; then
+                # Get the description from the function
+                local description=$(command_description "${cmd}" 2>/dev/null)
+                unset -f command_description  # Unset the function after use
+            else
+                # Default message if the function doesn't exist
+                local description="No description available"
+            fi
+
+            printf "    %-20s - %s\n" "${cmd}" "${description}"
+        fi
+    done
+    echo
+    exit 1
+}
+
+# Function to execute commands with sanitized input
+execute_command() {
+    local command="${1:-}"
+    # Sanitize the command input by only allowing alphanumeric characters and underscores
+    sanitized_command=$(echo "$command" | tr -d -c '[:alnum:]-_')
+
+    if [[ -z "${sanitized_command}" ]]; then
+        usage "Please specify a valid command."
+        return
+    fi
+
+    # Prepare both kebab-case and snake-case script names
+    local kebab_case_command_script="${COMMANDS_PATH}/${sanitized_command}.sh"
+    local snake_case_command="${sanitized_command//-/_}"
+    local snake_case_command_script="${COMMANDS_PATH}/${snake_case_command}.sh"
+
+    # Check for the existence of both script files
+    if [[ -f "${kebab_case_command_script}" ]] && [[ -f "${snake_case_command_script}" ]]; then
+        echo "Error: Both kebab-case and snake-case scripts exist for the command '${sanitized_command}'. Please resolve the conflict."
+        exit 1
+    fi
+
+    local script_to_source=""
+    local function_to_call="${snake_case_command}_main"
+
+    if [[ -f "${kebab_case_command_script}" ]]; then
+        script_to_source="${kebab_case_command_script}"
+    elif [[ -f "${snake_case_command_script}" ]]; then
+        script_to_source="${snake_case_command_script}"
+    else
+        usage "Command not found: ${sanitized_command}"
+        return
+    fi
+
+    # Source the script
+    source "${script_to_source}"
+
+    # Call the main function if it exists
+    if declare -f "${function_to_call}" &>/dev/null; then
+        "${function_to_call}" "$@"
+    else
+        echo "Invalid command action for '${sanitized_command}'. Please check the command usage."
+    fi
+}
+
+# Main function to process commands
+main() {
+    execute_command "$@"
+}
+
+# Entry point
+if [[ "$(basename "$0")" == "${SELF_IDENTITY}" ]]; then
+    main "$@"
+fi
