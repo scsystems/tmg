@@ -1,0 +1,3 @@
+ansible/group_vars/localhost.yml
+ansible/inventories/localhost
+scripts/
