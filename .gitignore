@@ -1,3 +1,9 @@
+# Temp
+ansible/
+
+
+
+# Static
 ansible/group_vars/localhost.yml
 ansible/inventories/localhost
 scripts/

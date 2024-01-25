@@ -1,43 +1,25 @@
----
 - hosts: localhost
   vars:
-    TERRAFORM_VERSION: 1.7.1
-    terraform_url_linux: "https://releases.hashicorp.com/terraform/{{ TERRAFORM_VERSION }}/terraform_{{ TERRAFORM_VERSION }}_linux_amd64.zip"
-    terraform_url_darwin: "https://releases.hashicorp.com/terraform/{{ TERRAFORM_VERSION }}/terraform_{{ TERRAFORM_VERSION }}_darwin_amd64.zip"
+    TERRAFORM_VERSION: 1.7.0
     local_bin_path: "{{ lookup('env', 'HOME') }}/.local/bin"
-    terraform_dest_linux: "/tmp/terraform_{{ TERRAFORM_VERSION }}.zip"
-    terraform_dest_darwin: "{{ local_bin_path }}/terraform_{{ TERRAFORM_VERSION }}.zip"
+    terraform_url_base: "https://releases.hashicorp.com/terraform/{{ TERRAFORM_VERSION }}/terraform_{{ TERRAFORM_VERSION }}_{{ ansible_system | lower }}_amd64.zip"
+    terraform_dest: "{{ local_bin_path }}/terraform_{{ TERRAFORM_VERSION }}.zip"
   tasks:
-    - name: Create ~/.local/bin directory (Linux)
+    - name: Create ~/.local/bin directory
       file:
         path: "{{ local_bin_path }}"
         state: directory
-      when: ansible_facts['os_family'] != "Darwin"
 
-    - name: Download Terraform binary (Linux)
+    - name: Download Terraform binary
       get_url:
-        url: "{{ terraform_url_linux }}"
-        dest: "{{ terraform_dest_linux }}"
-      when: ansible_facts['os_family'] != "Darwin"
+        url: "{{ terraform_url_base }}"
+        dest: "{{ terraform_dest }}"
+      when: ansible_system | lower in ['linux', 'darwin']
 
-    - name: Unzip Terraform binary (Linux)
+    - name: Unzip Terraform binary
       unarchive:
-        src: "{{ terraform_dest_linux }}"
+        src: "{{ terraform_dest }}"
         dest: "{{ local_bin_path }}"
         remote_src: yes
-        force: true
-      when: ansible_facts['os_family'] != "Darwin"
+      when: ansible_system | lower in ['linux', 'darwin']
 
-    - name: Download and unzip Terraform (Mac)
-      block:
-        - name: Download Terraform binary (Mac)
-          get_url:
-            url: "{{ terraform_url_darwin }}"
-            dest: "{{ terraform_dest_darwin }}"
-
-    - name: Unzip Terraform binary (Mac)
-      unarchive:
-        src: "{{ terraform_dest_darwin }}"
-        dest: "{{ local_bin_path }}"
-        remote_src: yes
-      when: ansible_facts['os_family'] == "Darwin"
