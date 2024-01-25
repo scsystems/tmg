@@ -74,7 +74,6 @@ create_ansible_structure() {
     echo "Ansible structure and inventory created in '$base_dir'"
 }
 
-
 # Main function
 install_dependencies_main() {
     local no_password=false
@@ -86,7 +85,7 @@ install_dependencies_main() {
         --no-password) no_password=true ;;
         --force) force=true ;;
         --devops) devops_dependencies=true ;;
-        *) echo "Unknown option: $1" ; exit 1 ;;
+        *) echo "Ignoring unknown option: $2" ;;
         esac
         shift
     done
@@ -101,7 +100,6 @@ install_dependencies_main() {
         exit 0
     fi
 
-
     local playbook_skip_tags=""
     [[ "${devops_dependencies}" != true ]] && playbook_skip_tags="devops_dependencies"
     local ask_pass=$([[ "${no_password}" == true ]] && echo false || echo true)
@@ -109,6 +107,7 @@ install_dependencies_main() {
     run_playbook "${playbook_skip_tags}" "${ask_pass}"
     echo "Finished!!!"
 }
+
 
 # Check if the script is being run indirectly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

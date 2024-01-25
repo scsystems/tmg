@@ -51,9 +51,15 @@ usage() {
             printf "    %-20s - %s\n" "${cmd}" "${description}"
         fi
     done
+
+    echo
+    echo "Available OPTIONS:"
+    printf "    %-20s - %s\n" "--devops" "Install additional tools locally"
+
     echo
     exit 1
 }
+
 
 # Function to execute commands with sanitized input
 execute_command() {
