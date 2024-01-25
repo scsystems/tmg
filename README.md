@@ -1,1 +1,1 @@
-# tmg
+# Technology Management Gateway
