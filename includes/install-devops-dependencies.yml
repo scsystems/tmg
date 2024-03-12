@@ -1,10 +1,19 @@
 - hosts: localhost
   vars:
-    TERRAFORM_VERSION: 1.7.0
+    TERRAFORM_VERSION: 1.7.4
     local_bin_path: "{{ lookup('env', 'HOME') }}/.local/bin"
     terraform_url_base: "https://releases.hashicorp.com/terraform/{{ TERRAFORM_VERSION }}/terraform_{{ TERRAFORM_VERSION }}_{{ ansible_system | lower }}_amd64.zip"
     terraform_dest: "{{ local_bin_path }}/terraform_{{ TERRAFORM_VERSION }}.zip"
   tasks:
+    - name: Install necessary packages
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - unzip
+        # Add other packages here if needed
+      become: yes
+
     - name: Create ~/.local/bin directory
       file:
         path: "{{ local_bin_path }}"
