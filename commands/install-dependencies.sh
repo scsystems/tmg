@@ -34,11 +34,38 @@ confirm_action() {
 install_ansible() {
     if ! command -v ansible > /dev/null; then
         echo "Installing Ansible"
-        # Add the actual installation commands here
+        if [ -x "$(command -v apk)" ]; then
+            # Alpine Linux
+            sudo apk add ansible
+        elif [ -x "$(command -v apt)" ]; then
+            # Ubuntu
+            sudo apt update
+            sudo apt install -y ansible
+        elif [ -x "$(command -v yum)" ]; then
+            # CentOS, RHEL, Oracle Linux
+            if [ -x "$(command -v dnf)" ]; then
+                sudo dnf install -y epel-release
+            else
+                sudo yum install -y epel-release
+            fi
+            sudo yum install -y ansible
+        elif [ -x "$(command -v brew)" ]; then
+            # MacOS
+            brew install ansible
+        elif [ -x "$(command -v amazon-linux-extras)" ]; then
+            # Amazon Linux 2 (AL2)
+            sudo amazon-linux-extras install ansible2
+        else
+            echo "Unsupported distribution. Please install Ansible manually."
+            # Insert manual installation steps for Oracle Linux
+            echo "Please visit the Ansible website for installation instructions."
+            exit 1
+        fi
     else
         echo "Ansible is already installed. Skipping."
     fi
 }
+
 
 # Function to run the Ansible playbook
 run_playbook() {
